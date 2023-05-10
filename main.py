@@ -32,6 +32,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("My App")
         self.setGeometry(0, 0, 1500, 900)
 
+        self.port = QSerialPort()
+
         # text s podkladem porty ..
         """textik1 = QLabel("Port ???")
         textik1.setStyleSheet("background-color: red")
@@ -40,26 +42,37 @@ class MainWindow(QMainWindow):
         textik1.setFont(font)
         textik1.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)"""
 
-        vyberportu = QComboBox()
-        vyberportu.setStyleSheet("background-color: red")
-        vyberportu.addItem("COM1")
-        vyberportu.addItem("COM2")
-        vyberportu.addItem("COM3")
-        vyberportu.addItem("COM4")
-        vyberportu.addItem("COM5")
+        """vyberportu = QComboBox()
+        vyberportu.setStyleSheet("background-color: red")"""
+            #porty
+        self.portNames = QtWidgets.QComboBox(self)
+        self.portNames.addItems([port.portName() for port in QSerialPortInfo().availablePorts()])
+        self.portNames.setMinimumHeight(30)
 
-        vyberportu.currentIndexChanged.connect(self.index_changed)
-
-
-        vyberportu.currentTextChanged.connect(self.text_changed)
+        self.portNames.currentIndexChanged.connect(self.index_changed)
 
 
-        textik2 = QLabel("Baudrate ???")
+        self.portNames.currentTextChanged.connect(self.text_changed)
+
+
+
+        #baudrate
+        self.baudRates = QtWidgets.QComboBox(self)
+        self.baudRates.addItems([
+            '110', '300', '600', '1200', '2400', '4800', '9600', '14400', '19200', '28800',
+            '31250', '38400', '51200', '56000', '57600', '76800', '115200'])
+        self.baudRates.setCurrentText('115200')
+        self.baudRates.setMinimumHeight(30)
+        self.baudRates.currentIndexChanged.connect(self.index_changed)
+        self.baudRates.currentTextChanged.connect(self.text_changed)
+
+
+        """textik2 = QLabel("Baudrate ???")
         textik2.setStyleSheet("background-color: green")
         font = textik2.font()
         font.setPointSize(30)
         textik2.setFont(font)
-        textik2.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        textik2.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)"""
 
 
         """textik3 = QLabel("Connect button??")
@@ -115,8 +128,12 @@ class MainWindow(QMainWindow):
         input.setFont(font)
         input.setMaxLength(150)
         input.setPlaceholderText("Enter your text")
-        input.setFixedSize(500, 400)
+        input.setFixedSize(400, 400)
         #input.setInputMask('00.00.00.00.00.00.00.00.00.00.00.00;_')
+        input.returnPressed.connect(self.return_pressed)
+        input.selectionChanged.connect(self.selection_changed)
+        input.textChanged.connect(self.text_changed)
+        input.textEdited.connect(self.text_edited)
 
 
         """input.returnPressed.connect(self.return_pressed)
@@ -124,13 +141,25 @@ class MainWindow(QMainWindow):
         input.textChanged.connect(self.text_changed)
         input.textEdited.connect(self.text_edited)"""
 
+        self.serialData = QtWidgets.QTextEdit(self)
+        self.serialData.setReadOnly(True)
+        self.serialData.setFontFamily('Courier New')
+        self.serialData.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
-        textik6 = QLabel("output")
+        self.serialDataHex = QtWidgets.QTextEdit(self)
+        self.serialDataHex.setReadOnly(True)
+        self.serialDataHex.setFontFamily('Courier New')
+        self.serialDataHex.setFixedWidth(400)
+        self.serialDataHex.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+
+
+
+        """textik6 = QLabel("output")
         textik6.setStyleSheet("background-color: orange")
         font = textik6.font()
         font.setPointSize(30)
         textik6.setFont(font)
-        textik6.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        textik6.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)"""
 
         # toolbar ..
         """toolbar = QToolBar("My main toolbar")
@@ -162,8 +191,8 @@ class MainWindow(QMainWindow):
         layout1.setContentsMargins(0, 0, 0, 0)
         layout1.setSpacing(0)
 
-        layout2.addWidget(vyberportu)
-        layout2.addWidget(textik2)
+        layout2.addWidget(self.portNames)
+        layout2.addWidget(self.baudRates)
         layout2.addWidget(self.button)
 
         layout1.addLayout(layout2)
@@ -173,7 +202,8 @@ class MainWindow(QMainWindow):
 
         layout3.addLayout(layout4)
         layout4.addWidget(input)
-        layout4.addWidget(textik6)
+        layout4.addWidget(self.serialData)
+        layout4.addWidget(self.serialDataHex)
 
         widget = QWidget()
         widget.setLayout(layout1)
@@ -186,6 +216,13 @@ class MainWindow(QMainWindow):
 
     def text_changed(self, b): # s je text vybraneho prvku portu
         print(b)
+
+    def baudRate(self,g):
+        print(g)
+
+    def baudrateindex(self,h):
+        print(h)
+
 
     """def return_pressed(self):
         print("Return pressed!")
@@ -213,9 +250,19 @@ class MainWindow(QMainWindow):
         if self.button_is_checked:
             self.button.setText("Connected")
             self.setStyleSheet("background-color: green")
+            self.port.setBaudRate(self.baudRate())
+            self.port.setPortName(self.portName())
+            r = self.port.open(QtCore.QIODevice.ReadWrite)
+            if not r:
+                print("Cannot open port,error")
+            else:
+                print("Port is open")
+                self.port.readyRead.connect(self.readFromPort)
         else:
             self.button.setText("Disconected")
             self.setStyleSheet("background-color: red")
+            self.port.close()
+            print("Port is closed")
 
     def update_plot_data(self):
         self.x = self.x[1:]  # Remove the first y element.
@@ -225,6 +272,32 @@ class MainWindow(QMainWindow):
         self.y.append(randint(0, 100))  # Add a new random value.
 
         self.data_line.setData(self.x, self.y)
+
+    def readFromPort(self):
+        data = self.port.readAll()
+        if len(data) > 0:
+            self.serialDataView.appendSerialText(QtCore.QTextStream(data).readAll(), QtGui.QColor(255, 0, 0))
+
+    def baudRate(self):
+        return int(self.baudRates.currentText())
+        print(self.baudRates.currentText())
+    def portName(self):
+        return self.portNames.currentText()
+
+    def return_pressed(self,i):
+        print(i)
+
+    def selection_changed(self,j):
+        print(j)
+
+    def text_changed(self,k):
+        print(k)
+
+    def text_edited(self,l):
+        print(l)
+
+
+
 
 app = QApplication(sys.argv)
 
