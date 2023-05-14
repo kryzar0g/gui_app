@@ -7,7 +7,8 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
 from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QCheckBox, QPushButton, QComboBox, QLineEdit, QToolBar, QAction
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, \
+    QCheckBox, QPushButton, QComboBox, QLineEdit, QToolBar, QAction
 from PyQt5.QtGui import QPalette, QColor
 from PyQt5.QtCore import Qt
 
@@ -23,6 +24,7 @@ class Color(QWidget):
         palette = self.palette()
         palette.setColor(QPalette.Window, QColor(color))
         self.setPalette(palette)
+
 
 class MainWindow(QMainWindow):
 
@@ -44,19 +46,16 @@ class MainWindow(QMainWindow):
 
         """vyberportu = QComboBox()
         vyberportu.setStyleSheet("background-color: red")"""
-            #porty
+        # porty
         self.portNames = QtWidgets.QComboBox(self)
         self.portNames.addItems([port.portName() for port in QSerialPortInfo().availablePorts()])
         self.portNames.setMinimumHeight(30)
 
         self.portNames.currentIndexChanged.connect(self.index_changed)
 
+        self.portNames.currentTextChanged.connect(self.index_changed)
 
-        self.portNames.currentTextChanged.connect(self.text_changed)
-
-
-
-        #baudrate
+        # baudrate
         self.baudRates = QtWidgets.QComboBox(self)
         self.baudRates.addItems([
             '110', '300', '600', '1200', '2400', '4800', '9600', '14400', '19200', '28800',
@@ -64,8 +63,7 @@ class MainWindow(QMainWindow):
         self.baudRates.setCurrentText('115200')
         self.baudRates.setMinimumHeight(30)
         self.baudRates.currentIndexChanged.connect(self.index_changed)
-        self.baudRates.currentTextChanged.connect(self.text_changed)
-
+        self.baudRates.currentTextChanged.connect(self.index_changed)
 
         """textik2 = QLabel("Baudrate ???")
         textik2.setStyleSheet("background-color: green")
@@ -73,7 +71,6 @@ class MainWindow(QMainWindow):
         font.setPointSize(30)
         textik2.setFont(font)
         textik2.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)"""
-
 
         """textik3 = QLabel("Connect button??")
         textik3.setStyleSheet("background-color: blue")
@@ -88,7 +85,6 @@ class MainWindow(QMainWindow):
         self.button.setCheckable(True)
         self.button.released.connect(self.the_button_was_released)
         self.button.setChecked(self.button_is_checked)
-
 
         self.graf = pg.PlotWidget()
         self.graf.setFixedSize(1300, 500)
@@ -105,7 +101,6 @@ class MainWindow(QMainWindow):
         self.timer.timeout.connect(self.update_plot_data)
         self.timer.start()
 
-
         """textik4 = QLabel("graph???")
         textik4.setStyleSheet("background-color: purple")
         font = textik4.font()
@@ -120,8 +115,7 @@ class MainWindow(QMainWindow):
         textik5.setFont(font)
         textik5.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)"""
 
-
-        input=QLineEdit()
+        input = QLineEdit()
         input.setStyleSheet("background-color: white")
         font = input.font()
         font.setPointSize(10)
@@ -129,12 +123,11 @@ class MainWindow(QMainWindow):
         input.setMaxLength(150)
         input.setPlaceholderText("Enter your text")
         input.setFixedSize(400, 400)
-        #input.setInputMask('00.00.00.00.00.00.00.00.00.00.00.00;_')
+        # input.setInputMask('00.00.00.00.00.00.00.00.00.00.00.00;_')
         input.returnPressed.connect(self.return_pressed)
         input.selectionChanged.connect(self.selection_changed)
-        input.textChanged.connect(self.text_changed)
+        input.textChanged.connect(self.index_changed)
         input.textEdited.connect(self.text_edited)
-
 
         """input.returnPressed.connect(self.return_pressed)
         input.selectionChanged.connect(self.selection_changed)
@@ -152,8 +145,6 @@ class MainWindow(QMainWindow):
         self.serialDataHex.setFixedWidth(400)
         self.serialDataHex.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
-
-
         """textik6 = QLabel("output")
         textik6.setStyleSheet("background-color: orange")
         font = textik6.font()
@@ -169,10 +160,9 @@ class MainWindow(QMainWindow):
         button_action.triggered.connect(self.onMyToolBarButtonClick)
         toolbar.addAction(button_action)"""
 
-
         # grid layout ..
         """ layout = QGridLayout()
-        
+
         layout.addWidget(Color('red'), 0, 0)
         layout.addWidget(Color('green'), 1, 0)
         layout.addWidget(Color('blue'), 0, 1)
@@ -209,20 +199,17 @@ class MainWindow(QMainWindow):
         widget.setLayout(layout1)
         self.setCentralWidget(widget)
 
-
-
-    def index_changed(self, a): # i je index vybraneho prvku portu
+    def index_changed(self, a):  # i je index vybraneho prvku portu
         print(a)
 
-    def text_changed(self, b): # s je text vybraneho prvku portu
+    def text_changed(self, b):  # s je text vybraneho prvku portu
         print(b)
 
-    def baudRate(self,g):
+    def baudRate(self, g):
         print(g)
 
-    def baudrateindex(self,h):
+    def baudrateindex(self, h):
         print(h)
-
 
     """def return_pressed(self):
         print("Return pressed!")
@@ -255,12 +242,17 @@ class MainWindow(QMainWindow):
             r = self.port.open(QtCore.QIODevice.ReadWrite)
             if not r:
                 print("Cannot open port,error")
+                #self.button.setChecked(False)
             else:
                 print("Port is open")
                 self.port.readyRead.connect(self.readFromPort)
+                self.button.setText("Connected")
+                self.button.setChecked(True)
+                self.port.setDataTerminalReady(True)
         else:
             self.button.setText("Disconected")
             self.setStyleSheet("background-color: red")
+            self.button.setChecked(False)
             self.port.close()
             print("Port is closed")
 
@@ -281,22 +273,21 @@ class MainWindow(QMainWindow):
     def baudRate(self):
         return int(self.baudRates.currentText())
         print(self.baudRates.currentText())
+
     def portName(self):
         return self.portNames.currentText()
 
-    def return_pressed(self,i):
+    def return_pressed(self, i):
         print(i)
 
-    def selection_changed(self,j):
+    def selection_changed(self, j):
         print(j)
 
-    def text_changed(self,k):
+    def text_changed(self, k):
         print(k)
 
-    def text_edited(self,l):
+    def text_edited(self, l):
         print(l)
-
-
 
 
 app = QApplication(sys.argv)
