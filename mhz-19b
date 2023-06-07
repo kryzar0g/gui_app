@@ -1,0 +1,130 @@
+#include <Arduino.h>
+
+
+
+#include <SoftwareSerial.h>
+
+SoftwareSerial co2serial(3, 2); // define MH-Z19 RX TX
+
+const  byte cmd[9] = {0xFF, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79};
+
+byte response[9]; // for CO2-Sensor answer
+
+
+
+int co2 = 8888;
+
+
+
+void setup() {
+
+  Serial.begin(9600);
+
+  co2serial.begin(9600);
+
+  Serial.println("start!");
+
+  delay(3000);
+
+}
+
+
+
+void loop() {
+
+  if (((millis() % 5000) < 10)) {
+
+    readCO2UART();
+
+    delay(10);
+
+  }
+
+}
+
+
+
+void readCO2UART() {
+
+  co2serial.write(cmd, 9); //request PPM CO2
+
+  // clear the buffer
+
+  memset(response, 0, 9);
+
+  //  memset(payload, 0, sizeof(payload));
+
+  while (co2serial.available() == 0) {
+
+    delay(500);
+
+  }
+
+  if (co2serial.available() > 0) {
+
+    co2serial.readBytes(response, 9);
+
+  }
+
+  byte check = getCheckSum(response);
+
+  if (response[8] != check) {
+
+    Serial.println("Checksum not OK!");
+
+    Serial.print("Received: ");
+
+    Serial.println(response[8]);
+
+    Serial.print("Should be: ");
+
+    Serial.println(check);
+
+  }
+
+  else {
+
+    // ppm
+
+    //co2 = 256 * (int)response[2] + response[3];
+
+
+
+    
+
+    Serial.print(float(256 * (int)response[2] + response[3]));
+
+    Serial.print(";");
+
+    Serial.print(float(response[4] - 40));
+
+    Serial.print(";");
+
+    Serial.println(0);
+  }
+
+  return ;
+
+}
+
+
+
+byte getCheckSum(byte *pack) {
+
+  byte checksum = 0;
+
+  for (byte i = 1; i < 8; i++) {
+
+    checksum += pack[i];
+
+  }
+
+  checksum = 0xff - checksum + 1;
+
+  return checksum;
+
+}
+
+
+
+// end of code.
