@@ -79,6 +79,7 @@ class MainWindow(QMainWindow):
 
 
 
+
         self.setWindowTitle("co2 monitoring")
 
 
