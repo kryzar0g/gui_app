@@ -8,6 +8,8 @@ from PyQt5.QtCore import QIODevice
 import time
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5 import QtCore
+from PyQt5.QtCore import Qt
+
 
 class Color(QWidget):
 
@@ -18,6 +20,7 @@ class Color(QWidget):
         palette = self.palette()
         palette.setColor(QPalette.Window, QColor(color))
         self.setPalette(palette)
+
 
 
 class MainWindow(QMainWindow):
@@ -72,15 +75,31 @@ class MainWindow(QMainWindow):
 
             self.update_plot_data()  # Call update_plot_data to update the plot
 
-
-
     def __init__(self):
         super(MainWindow, self).__init__()
 
+        #app.setStyle('Fusion')
+        dark_palette = QPalette()
+        dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
+        dark_palette.setColor(QPalette.WindowText, Qt.white)
+        dark_palette.setColor(QPalette.Base, QColor(25, 25, 25))
+        dark_palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
+        dark_palette.setColor(QPalette.ToolTipBase, Qt.white)
+        dark_palette.setColor(QPalette.ToolTipText, Qt.white)
+        dark_palette.setColor(QPalette.Text, Qt.white)
+        dark_palette.setColor(QPalette.Button, QColor(53, 53, 53))
+        dark_palette.setColor(QPalette.ButtonText, Qt.white)
+        dark_palette.setColor(QPalette.BrightText, Qt.red)
+        dark_palette.setColor(QPalette.Link, QColor(42, 130, 218))
+        dark_palette.setColor(QPalette.Highlight, QColor(42, 130, 218))
+        dark_palette.setColor(QPalette.HighlightedText, Qt.black)
+        app.setPalette(dark_palette)
 
 
 
-        self.setWindowTitle("co2 monitoring")
+
+
+        self.setWindowTitle("CO2 monitor_Project 2 - Zaruba Krystof")
 
 
         self.port = QSerialPort()
@@ -88,7 +107,8 @@ class MainWindow(QMainWindow):
         # porty
         self.portNames = QtWidgets.QComboBox(self)
         self.portNames.addItems([port.portName() for port in QSerialPortInfo().availablePorts()])
-        self.portNames.setMinimumHeight(30)
+        #self.portNames.setMinimumHeight(30)
+        self.portNames.setStyleSheet("background-color: black")
 
         self.portNames.currentIndexChanged.connect(self.index_changed)
         self.portNames.currentTextChanged.connect(self.index_changed)
@@ -103,19 +123,22 @@ class MainWindow(QMainWindow):
             '110', '300', '600', '1200', '2400', '4800', '9600', '14400', '19200', '28800',
             '31250', '38400', '51200', '56000', '57600', '76800', '115200'])
         self.baudRates.setCurrentText('115200')
-        self.baudRates.setMinimumHeight(30)
+        #self.baudRates.setMinimumHeight(30)
+        self.baudRates.setStyleSheet("background-color: black")
         self.baudRates.currentIndexChanged.connect(self.index_changed)
         self.baudRates.currentTextChanged.connect(self.index_changed)
 
         self.button_is_checked = False
         self.button = QPushButton("Connect")
-        self.button.setFixedSize(250, 100)
+        #self.button.setFixedSize(250, 100)
         self.button.setCheckable(True)
+        self.button.setStyleSheet("background-color: black")
         self.button.released.connect(self.the_button_was_released)
         self.button.setChecked(self.button_is_checked)
 
         self.typ_grafu = QtWidgets.QComboBox(self)
         self.typ_grafu.addItems(['ppm', 'temperature', 'humidity'])
+        self.typ_grafu.setStyleSheet("background-color: black")
         self.typ_grafu.currentTextChanged.connect(self.index_changed)
         self.typ_grafu.currentIndexChanged.connect(self.index_changed)
 
@@ -127,7 +150,7 @@ class MainWindow(QMainWindow):
         self.x = list(range(1000))  # 100 time points
         self.y = [0] * 1000  # 100 data points
 
-        self.graf.setBackground('w')
+        self.graf.setBackground('k')
 
         pen = pg.mkPen(color=(215, 51, 112))
         self.data_line = self.graf.plot(self.x, self.y, pen=pen)
@@ -148,13 +171,13 @@ class MainWindow(QMainWindow):
         self.serialDataHex.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
         self.fileNameInput = QLineEdit()
-        self.fileNameInput.setStyleSheet("background-color: white")
+        self.fileNameInput.setStyleSheet("background-color: black")
         self.fileNameInput.setPlaceholderText("nazev souboru k ulozeni ve formatu .csv")
         self.fileNameInput.returnPressed.connect(self.save_file)
 
         # normalni layout ..
-        layout1 = QHBoxLayout()
-        layout2 = QVBoxLayout()
+        layout1 = QVBoxLayout()
+        layout2 = QHBoxLayout()
         layout3 = QVBoxLayout()
         layout4 = QHBoxLayout()
 
@@ -201,13 +224,13 @@ class MainWindow(QMainWindow):
 
         if self.button_is_checked:
             self.button.setText("Connected")
-            #self.setStyleSheet("background-color: green")
             self.port.setBaudRate(self.baudRate())
             self.port.setPortName(self.portName())
             r = self.port.open(QIODevice.ReadWrite)
             if not r:
                 print("Cannot open port, error")
                 self.button.setChecked(False)
+                self.button.setText("Cannot open port, error")
             else:
                 print("Port is open")
                 self.port.readyRead.connect(self.cteni_dat)
@@ -216,7 +239,6 @@ class MainWindow(QMainWindow):
                 self.port.setDataTerminalReady(True)
         else:
             self.button.setText("Disconnected")
-            #self.setStyleSheet("background-color: red")
             self.button.setChecked(False)
             self.port.close()
             print("Port is closed")
